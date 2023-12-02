@@ -1,5 +1,4 @@
-#include <SDL2/SDL_audio.h>
-#include <SDL2/SDL_timer.h>
+#include "examples/minisdl_audio.h"
 
 #define TSF_IMPLEMENTATION
 #include "tsf.h"
