@@ -13,7 +13,7 @@ Assertion 'm' failed at pulse/mainloop.c:919, function pa_mainloop_iterate(). Ab
 pulse/mainloop.c:919,[1] + Done                       "/usr/bin/gdb" --interpreter=mi --tty=${DbgTerm} 0<"/tmp/Microsoft-MIEngine-In-feawpsix.wbv" 1>"/tmp/Microsoft-MIEngine-Out-cpa5qpvx.0cd"
 위와 같은 에러 발생
 
-
+병준님 로컬네트워크 주소 192.168.33.70
 
 ```
 
