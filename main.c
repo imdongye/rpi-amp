@@ -11,7 +11,7 @@
 	Todo:
 		1. UDP 통신
 
-	gcc -o server main.c -lpthread -ldl -lm -lSDL2 && ./server
+	gcc -o server main.c -lpthread -ldl -lm -lSDL2 && ./server 12345
 */
 #include <stdio.h>
 #include <sys/types.h>
@@ -78,6 +78,7 @@ static void* threadClnt(void* data) {
 	char msg[SIZE_MSG];
 	int note;
 	int fontIdx = 1;
+	int clntId = -1;
 	int prevNote = -1;
 
     while(1) {
@@ -85,16 +86,26 @@ static void* threadClnt(void* data) {
         if(nr_msg<=0) {
             printf("[] 소켓에서 읽었는데 에러 또는 클라이언트 종료됨\n");
             break;
-        } else if(strcmp("[CLNT]KILL\n", msg)==0)  {
+        } 
+		else if(strcmp("[CLNT]KILL\n", msg)==0)  {
 			printf("[] 클라이언트의 쉘 종료 메시지 수신 후 종료\n");
 			break;
-        } else if(result ("[CLNT]", msg)!=NULL)  {
-			printf("Todo: 아이디 입력\n");
-			break;
+        } 
+		else if( nr_msg==4 && msg[0]=='i' && msg[0]=='i' && msg[1]=='d' )  {
+			clntId = atoi(msg+2);
+			printf("[] 아이디 입력됨 %d\n", clntId);
+			switch(clntId) {
+			case 0: fontIdx = 0; break;
+			case 1: fontIdx = 0; break;
+			case 2: fontIdx = 0; break;
+			}
+			// Todo: 클라id에 따라서 음역대도 설정
+			continue;
         }
 		note = atoi(msg);
+		printf("font:%d, note:%d\n", fontIdx, note);
 
-		printf("%d\n", note);
+		// 이전에 재생한 노트재생을 종료한다. 종료 안해도되긴한다.
 		if(prevNote>0)
 			tsf_note_off(g_TinySoundFont, fontIdx, prevNote);
 		tsf_note_on(g_TinySoundFont, fontIdx, note, 1.f);
@@ -113,8 +124,6 @@ static void signalHandel(int sig) {
 
 int main(int argc, char *argv[])
 {
-	int i;
-	int notes[7] = { 48, 50, 52, 53, 55, 57, 59 };
 	unsigned short serv_port;
 
 	if( argc!=2 ) {
@@ -122,7 +131,6 @@ int main(int argc, char *argv[])
         exit(1);
     } 
 	serv_port=atoi(argv[1]);
-
 
 	SDL_AudioSpec OutputAudioSpec;
 	OutputAudioSpec.freq = 44100; // 1초에 재생되는 샘플 수
@@ -214,15 +222,18 @@ int main(int argc, char *argv[])
 		}
 	}
 
-	int rst_thd, status, i;
-	for( i=0; i<MAX_CLNT; i++ ) {
-    	rst_thd = pthread_join(NULL, (void**)&status);
-		if( rst_thd!=0 ) {
-			fprintf(stderr, "error pthread_join with code : %d\n", rst_thd);
-			exit(1);
-		}
-		printf("[] 악기종료 %d\n", i);
+	// 종료
+	{
+		int rst_thd, status, i;
+		for( i=0; i<MAX_CLNT; i++ ) {
+			rst_thd = pthread_join(clnt_tids[i], (void**)&status);
+			if( rst_thd!=0 ) {
+				fprintf(stderr, "error pthread_join with code : %d\n", rst_thd);
+				exit(1);
+			}
+			printf("[] 악기종료 %d\n", i);
 
+		}
 	}
 
 	deinit();

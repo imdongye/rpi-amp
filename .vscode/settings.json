@@ -3,4 +3,7 @@
         "cwd": "${workspaceFolder}",
         "console": "integratedTerminal",
     },
+    "files.associations": {
+        "string.h": "c"
+    },
 }
