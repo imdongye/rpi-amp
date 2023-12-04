@@ -26,5 +26,10 @@ cmake --build ./build
 
 ./build/amp_exe
 
+// 또는
+
+gcc -o server main.c -lpthread -ldl -lm -lSDL2 && ./server
+
+gcc -o client test_clnt.c -lpthread -ldl -lm
 
 ```
