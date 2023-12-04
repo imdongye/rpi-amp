@@ -8,10 +8,13 @@
 		클라이언트 포트 특정 어떻게하는지 모르겠음.
 		종료할때는 id 값이 10이상의 값을 보내줘야한다.
 
+		소캣 메시지 첫번째 id, 두번째 note(30~110), 새번째 volume(0~100)
+		주기는 10ms
+
 	Todo:
 		1. UDP 통신
 
-	gcc -o server main.c -lpthread -ldl -lm -lSDL2 && ./server 12345
+	gcc -o server main.c -lpthread -ldl -lm -lSDL2 && ./server 5000
 */
 #include <stdio.h>
 #include <sys/types.h>
@@ -29,6 +32,8 @@
 #define TSF_IMPLEMENTATION
 #include "tsf.h"
 
+#include "copied_types.h"
+
 
 #define MAX_VOLUME 100
 
@@ -37,6 +42,7 @@ static int serv_connecting_sockfd;
 static int clnt_sockfds[MAX_CLNT];
 static pthread_t clnt_tids[MAX_CLNT];
 static pthread_t tid_test;
+// button, ultrasonic, waterlevel
 static int fonts[MAX_CLNT] = {0,1,2};
 
 // Holds the global instance pointer
@@ -79,26 +85,24 @@ static void* threadClnt(void* data) {
 	int prevNote = -1;
 
     while(1) {
-		int msg[3], id, note, v, font;
+		payload_t payload;
+		int font, note;
 		float volume;
-        int nr_msg = read(clnt_sockfd, msg, sizeof(msg));
+        int nr_msg = read(clnt_sockfd, &payload, sizeof(payload));
         if(nr_msg<=0) {
             printf("[] 소켓에서 읽었는데 에러 또는 클라이언트 종료됨\n");
             break;
-        } 
-		id = msg[0];
-	
-		if(id>10) {
+        }
+		if( payload.id>10) {
             printf("[] 클라이언트의 킬 신호 수신\n");
 			break;
 		}
-		note = msg[1];
-		v = msg[2];
-		font = fonts[id];
-		volume = v/(float)MAX_VOLUME;
+		font = fonts[payload.id];
+		note = payload.note;
+		volume = payload.volume/(float)MAX_VOLUME;
 		volume = (volume>1.f)?1.f:volume;
 
-		printf("font:%d, note:%d, %dvol:%f\n", font, note, v, volume);
+		printf("font:%d, note:%d, vol:%f\n", font, note, volume);
 
 		// 이전에 재생한 노트재생을 종료한다. 종료 안해도되긴한다.
 		if(prevNote>0)

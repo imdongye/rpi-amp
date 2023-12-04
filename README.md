@@ -28,8 +28,8 @@ cmake --build ./build
 
 // 또는
 
-gcc -o server main.c -lpthread -ldl -lm -lSDL2 && ./server
+gcc -o server main.c -lpthread -ldl -lm -lSDL2 && ./server 5000
 
-gcc -o client test_clnt.c -lpthread -ldl -lm
+gcc -o client test_clnt.c -lpthread -ldl -lm && ./client 127.0.0.1 5000
 
 ```

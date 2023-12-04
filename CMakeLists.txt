@@ -18,3 +18,7 @@ else()
     # SDL2 : minisdl_audio.c를 직접 컴파일하지 않고 동적링킹한다.
     target_link_libraries(${exe_name} PRIVATE m dl pthread SDL2)
 endif()
+
+set(exe_name client)
+add_executable(${exe_name} test_clnt.c)
+target_link_libraries(${exe_name} PRIVATE m dl pthread)

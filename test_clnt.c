@@ -3,7 +3,7 @@
 	
 	서버에 신호만 보내는 테스트용 클라이언트
 	
-	gcc -o client test_clnt.c -lpthread -ldl -lm && ./client 127.0.0.1 12345
+	gcc -o client test_clnt.c -lpthread -ldl -lm && ./client 127.0.0.1 5000
 */
 #include <stdio.h>
 #include <sys/types.h>
@@ -15,6 +15,7 @@
 #include <pthread.h>
 #include <arpa/inet.h>
 #include <signal.h>
+#include "copied_types.h"
 
 #define SIZE_MSG 256
 #define SIZE_REQ 256
@@ -22,13 +23,14 @@
 static int serv_sockfd;
 
 static void deinit() {
-    char msg[] = "[CLNT]KILL\n";
-    int rst_sock = write(serv_sockfd, msg, sizeof(msg));
+    payload_t payload = {99, 0, 0};
+    int rst_sock = write(serv_sockfd, &payload, sizeof(payload));
     if( rst_sock<=0 ) {
-        printf("[] 소캣에 쓰기했는데 에러 또는 클라이언트 종료됨\n");
+        printf("[] 소캣에 쓰기했는데 에러 또는 서버종료됨\n");
+        exit(1);
     }
 	close(serv_sockfd);
-	printf("[] [CLNT]KILL전달하고 클라종료\n");
+	printf("[] id>10으로 킬 신호 전달하고 클라종료\n");
 	exit(0);
 }
 
@@ -81,11 +83,12 @@ int main( int argc, char* argv[] )
         printf("[] 서버 연결 완료\n");
     }
 
+    // 서버 신호 발신 코드
     char req[SIZE_REQ];
     while(1) {
-        int msg[3];
-        scanf("%d %d %d", msg, msg+1, msg+2);
-        int rst_sock = write(serv_sockfd, msg, sizeof(msg));
+        payload_t payload;
+        scanf("%d %d %d", &payload.id, &payload.note, &payload.volume);
+        int rst_sock = write(serv_sockfd, &payload, sizeof(payload));
         if( rst_sock<=0 ) {
             printf("[] 소캣에 쓰기했는데 에러 또는 서버종료됨\n");
             break;
