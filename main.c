@@ -37,13 +37,13 @@
 
 #define MAX_VOLUME 100
 
-#define MAX_CLNT 3
+#define MAX_CLNT 4
 static int serv_connecting_sockfd;
 static int clnt_sockfds[MAX_CLNT];
 static pthread_t clnt_tids[MAX_CLNT];
 static pthread_t tid_test;
 // button, ultrasonic, waterlevel
-static int fonts[MAX_CLNT] = {0,1,2};
+static int fonts[MAX_CLNT] = {0,1,2,1};
 
 // Holds the global instance pointer
 static tsf* g_TinySoundFont;
@@ -107,7 +107,7 @@ static void* threadClnt(void* data) {
 		// 이전에 재생한 노트재생을 종료한다. 종료 안해도되긴한다.
 		if(prevNote>0)
 			tsf_note_off(g_TinySoundFont, font, prevNote);
-		tsf_note_on(g_TinySoundFont, font, note, volume);
+		tsf_note_on(g_TinySoundFont, font, note, 1.0);
 		prevNote = note;
     }
     printf("[] threadClnt 쓰레드 탈출\n");
