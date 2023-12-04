@@ -1,3 +1,5 @@
+// gcc -o example examples/example2.c -lpthread -ldl -lm -lSDL2 && ./example
+
 #include "minisdl_audio.h"
 
 #define TSF_IMPLEMENTATION
@@ -65,11 +67,12 @@ int main(int argc, char *argv[])
 	// Loop through all the presets in the loaded SoundFont
 	for (i = 0; i < tsf_get_presetcount(g_TinySoundFont); i++)
 	{
+		float vel = i/(float)10;
 		//Get exclusive mutex lock, end the previous note and play a new note
 		printf("Play note %d with preset #%d '%s'\n", Notes[i % 7], i, tsf_get_presetname(g_TinySoundFont, i));
 		SDL_LockMutex(g_Mutex);
 		tsf_note_off(g_TinySoundFont, i - 1, Notes[(i - 1) % 7]);
-		tsf_note_on(g_TinySoundFont, i, Notes[i % 7], 1.0f);
+		tsf_note_on(g_TinySoundFont, i, Notes[i % 7], vel);
 		SDL_UnlockMutex(g_Mutex);
 		SDL_Delay(1000);
 	}

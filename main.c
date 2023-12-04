@@ -6,7 +6,7 @@
 	Note: 
 		악기 연결되고 자신의 아이디를 먼저 보내서 식별한다. [CLNT]0
 		클라이언트 포트 특정 어떻게하는지 모르겠음.
-		종료할때는 [CLNT]KILL
+		종료할때는 id 값이 10이상의 값을 보내줘야한다.
 
 	Todo:
 		1. UDP 통신
@@ -30,13 +30,14 @@
 #include "tsf.h"
 
 
-#define SIZE_MSG 256
-#define SIZE_REQ 256
+#define MAX_VOLUME 100
+
 #define MAX_CLNT 3
 static int serv_connecting_sockfd;
 static int clnt_sockfds[MAX_CLNT];
 static pthread_t clnt_tids[MAX_CLNT];
 static pthread_t tid_test;
+static int fonts[MAX_CLNT] = {0,1,2};
 
 // Holds the global instance pointer
 static tsf* g_TinySoundFont;
@@ -75,42 +76,35 @@ static void deinit() {
 
 static void* threadClnt(void* data) {
 	int clnt_sockfd = *(int*)data;
-	char msg[SIZE_MSG];
-	int note;
-	int fontIdx = 1;
-	int clntId = -1;
 	int prevNote = -1;
 
     while(1) {
-        int nr_msg = read(clnt_sockfd, msg, SIZE_MSG);
+		int msg[3], id, note, v, font;
+		float volume;
+        int nr_msg = read(clnt_sockfd, msg, sizeof(msg));
         if(nr_msg<=0) {
             printf("[] 소켓에서 읽었는데 에러 또는 클라이언트 종료됨\n");
             break;
         } 
-		else if(strcmp("[CLNT]KILL\n", msg)==0)  {
-			printf("[] 클라이언트의 쉘 종료 메시지 수신 후 종료\n");
+		id = msg[0];
+	
+		if(id>10) {
+            printf("[] 클라이언트의 킬 신호 수신\n");
 			break;
-        } 
-		else if( nr_msg==4 && msg[0]=='i' && msg[0]=='i' && msg[1]=='d' )  {
-			clntId = atoi(msg+2);
-			printf("[] 아이디 입력됨 %d\n", clntId);
-			switch(clntId) {
-			case 0: fontIdx = 0; break;
-			case 1: fontIdx = 0; break;
-			case 2: fontIdx = 0; break;
-			}
-			// Todo: 클라id에 따라서 음역대도 설정
-			continue;
-        }
-		note = atoi(msg);
-		printf("font:%d, note:%d\n", fontIdx, note);
+		}
+		note = msg[1];
+		v = msg[2];
+		font = fonts[id];
+		volume = v/(float)MAX_VOLUME;
+		volume = (volume>1.f)?1.f:volume;
+
+		printf("font:%d, note:%d, %dvol:%f\n", font, note, v, volume);
 
 		// 이전에 재생한 노트재생을 종료한다. 종료 안해도되긴한다.
 		if(prevNote>0)
-			tsf_note_off(g_TinySoundFont, fontIdx, prevNote);
-		tsf_note_on(g_TinySoundFont, fontIdx, note, 1.f);
+			tsf_note_off(g_TinySoundFont, font, prevNote);
+		tsf_note_on(g_TinySoundFont, font, note, volume);
 		prevNote = note;
-
     }
     printf("[] threadClnt 쓰레드 탈출\n");
 }
@@ -214,6 +208,7 @@ int main(int argc, char *argv[])
 			}
 			int rst_thd;
 			printf("[] 연결완료 클라포트%d\n", clnt_addr.sin_port);
+			// 악기 신호 수신 쓰레드 생성
 			rst_thd = pthread_create(&clnt_tids[i], NULL, threadClnt, (void*)&clnt_sockfds[i]);
 			if( rst_thd!=0 ) {
 				fprintf(stderr, "error pthread_create with code : %d\n", i);
@@ -231,8 +226,7 @@ int main(int argc, char *argv[])
 				fprintf(stderr, "error pthread_join with code : %d\n", rst_thd);
 				exit(1);
 			}
-			printf("[] 악기종료 %d\n", i);
-
+			printf("[] %d악기종료 %d\n", i);
 		}
 	}
 

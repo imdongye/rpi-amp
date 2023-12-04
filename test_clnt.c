@@ -83,12 +83,9 @@ int main( int argc, char* argv[] )
 
     char req[SIZE_REQ];
     while(1) {
-        int nr_req = read(STDIN_FILENO, req, SIZE_REQ);
-        if(nr_req<=0) {
-            printf("[] read stdin error\n");
-            break;
-        }
-        int rst_sock = write(serv_sockfd, req, nr_req);
+        int msg[3];
+        scanf("%d %d %d", msg, msg+1, msg+2);
+        int rst_sock = write(serv_sockfd, msg, sizeof(msg));
         if( rst_sock<=0 ) {
             printf("[] 소캣에 쓰기했는데 에러 또는 서버종료됨\n");
             break;
