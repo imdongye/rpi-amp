@@ -16,6 +16,8 @@
 
 	gcc -o server main.c -lpthread -ldl -lm -lSDL2 && ./server 5000
 */
+
+// #include "drivers.h"
 #include <stdio.h>
 #include <sys/types.h>
 #include <sys/socket.h>
@@ -27,6 +29,7 @@
 #include <signal.h>
 #include <sys/types.h>
 #include <sys/wait.h>
+#include <time.h>
 
 #include "examples/minisdl_audio.h"
 #define TSF_IMPLEMENTATION
@@ -34,6 +37,7 @@
 
 #include "copied_types.h"
 
+#define TEST_GPIO_PIN 21
 
 #define MAX_VOLUME 100
 #define MAX_CLNT 3
@@ -44,7 +48,6 @@ static int led_sockfd;
 static int clnt_sockfds[MAX_CLNT];
 static pthread_t clnt_tids[MAX_CLNT];
 static pthread_t tid_test, led_tid;
-// button, ultrasonic, waterlevel, 가속도
 /*
 Play note 48 with preset #0 'Piano'
 Play note 50 with preset #1 'Music Box'
@@ -64,7 +67,8 @@ Play note 48 with preset #14 'Soundtrack'
 Play note 50 with preset #15 'Bagpipe'
 Play note 52 with preset #16 'Taiko'
 */
-static int fonts[NR_CHANNEL] = {4,1,0,5};
+// button, ultrasonic, waterlevel, 가속도
+static int fonts[NR_CHANNEL] = {0,7,2,9};
 static int last_notes[NR_CHANNEL] = {0,};
 
 // Holds the global instance pointer
@@ -81,13 +85,14 @@ static void mixAudio(void* data, Uint8 *stream, int len)
 	SDL_LockMutex(g_Mutex); //get exclusive lock
 	tsf_render_float(g_TinySoundFont, (float*)stream, sampleCount, 0);
 	SDL_UnlockMutex(g_Mutex);
-
 }
 
 
 static void deinit() {
 	// 리소스 해제
 	int i;
+	// GPIOUnexport(TEST_GPIO_PIN);
+
 	for(i=0; i<MAX_CLNT; i++) {
         if(clnt_sockfds[i]!=-1) {
             close(clnt_sockfds[i]);
@@ -110,12 +115,13 @@ static void deinit() {
 static void* threadClnt(void* data) {
 	int clnt_sockfd = *(int*)data;
 	int prevNote = -1;
+	int font, note, channel;
 
     while(1) {
 		payload_t payload;
-		int font, note, channel;
 		float volume;
         int nr_msg = read(clnt_sockfd, &payload, sizeof(payload));
+
         if(nr_msg<=0) {
             printf("[] 소켓에서 읽었는데 에러 또는 클라이언트 종료됨\n");
             break;
@@ -124,11 +130,15 @@ static void* threadClnt(void* data) {
             printf("[] 클라이언트의 킬 신호 수신\n");
 			break;
 		}
+		
+
 		channel = payload.id;
 		font = fonts[channel];
-		note = payload.note;
+		note = (payload.note>100)? 110: payload.note;
 		volume = payload.volume/(float)MAX_VOLUME;
 		volume = (volume>1.f)?1.f:volume;
+		if(note<30)
+			volume = 0.f;
 
 		printf("font:%d, note:%d, vol:%f\n", font, note, volume);
 
@@ -136,15 +146,22 @@ static void* threadClnt(void* data) {
 		// 이전에 재생한 노트재생을 종료한다. 종료 안해도되긴한다.
 		if(prevNote>0)
 			tsf_note_off(g_TinySoundFont, font, prevNote);
-		tsf_note_on(g_TinySoundFont, font, note, 1.0);
+		if(volume>0.2f) {
+			tsf_note_on(g_TinySoundFont, font, note, volume);
+			prevNote = note;
+		}
+		else {
+			prevNote = -1;
+		}
+		last_notes[channel] = payload.note;
 		SDL_UnlockMutex(g_Mutex);
-
-
-		prevNote = note;
     }
+
+	tsf_note_off(g_TinySoundFont, font, prevNote);
     printf("[] threadClnt 쓰레드 탈출\n");
 }
 
+// led를 위한 종합 신호 발신
 static void* threadLed(void* data) {
 	int clnt_sockfd = *(int*)data;
 	int i;
@@ -183,6 +200,16 @@ int main(int argc, char *argv[])
         exit(1);
     } 
 	serv_port=atoi(argv[1]);
+
+
+	// {
+	// 	if( GPIOExport(TEST_GPIO_PIN)<0 ) {
+	// 		exit(1);
+	// 	}
+	// 	if( GPIODirection(TEST_GPIO_PIN, OUT)<0 ) {
+	// 		exit(2);
+	// 	}
+	// }
 
 	/* 오디오 */
 	{
@@ -281,7 +308,8 @@ int main(int argc, char *argv[])
 			exit(1);
 		}
 
-		// accept
+
+		// 발신 accept 
 		// struct sockaddr_in led_addr;
 		// socklen_t led_addr_size = sizeof(led_addr);
 		// led_sockfd = accept(led_connecting_sockfd, (struct sockaddr*)&led_addr, &led_addr_size);
@@ -291,13 +319,15 @@ int main(int argc, char *argv[])
 		// }
 		// int rst_thd;
 		// printf("[] 연결완료 led out포트%d\n", led_addr.sin_port);
-		// // 악기 신호 수신 쓰레드 생성
+		// // 악기 신호 발신 쓰레드 생성
 		// rst_thd = pthread_create(&led_tid, NULL, threadLed, (void*)&led_sockfd);
 		// if( rst_thd!=0 ) {
 		// 	fprintf(stderr, "error pthread_create with code : %d\n", rst_thd);
 		// 	exit(1);
 		// }
 
+
+		// 악기 accept
 		for( i=0; i<MAX_CLNT; i++ ) {
 			printf("[] 연결대기중\n");
 			struct sockaddr_in clnt_addr;

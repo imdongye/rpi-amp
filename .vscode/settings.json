@@ -4,6 +4,7 @@
         "console": "integratedTerminal",
     },
     "files.associations": {
-        "string.h": "c"
+        "string.h": "c",
+        "copied_types.h": "c"
     },
 }

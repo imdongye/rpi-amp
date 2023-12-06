@@ -85,14 +85,27 @@ int main( int argc, char* argv[] )
 
     // 서버 신호 발신 코드
     char req[SIZE_REQ];
+    int font = 1;
+    int note = 50;
+    int vol = 100;
     while(1) {
         payload_t payload;
-        scanf("%d %d %d", &payload.id, &payload.note, &payload.volume);
+        {
+            note += 1;
+            vol -= 10;
+            payload.id = font;
+            payload.note = note;
+            payload.volume = vol;
+        }
+            
+        //scanf("%d %d %d", &payload.id, &payload.note, &payload.volume);
         int rst_sock = write(serv_sockfd, &payload, sizeof(payload));
         if( rst_sock<=0 ) {
             printf("[] 소캣에 쓰기했는데 에러 또는 서버종료됨\n");
             break;
         }
+        printf("send\n");
+        sleep(1);
     }
 
     deinit();
