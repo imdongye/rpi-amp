@@ -1,5 +1,17 @@
 ## rpi-amp
 
+여러개의 클라이언트와 소켓통신으로 수신한 센서값으로 사운드폰트를 출력하는 합주 시스템.
+
+---
+
+![created by luftaquila](readme/overview.png)
+
+![](https://img.youtube.com/vi/MmDjA5BigVI/0.jpg)
+
+[유튜브링크](https://youtu.be/MmDjA5BigVI?si=FCbgIehlzDGsObau)
+
+---
+
 windows에서 minisdl_audio.c가 컴파일돼서 정상작동하지만
 
 rpi에서 런타임에 DSP_GetDeviceBuf의 mixbuf에서 segmentation fault가 발생함.
@@ -33,3 +45,4 @@ gcc -o server main.c -lpthread -ldl -lm -lSDL2 && ./server 5000
 gcc -o client test_clnt.c -lpthread -ldl -lm && ./client 127.0.0.1 5000
 
 ```
+
