@@ -1,6 +1,10 @@
 ## rpi-amp
 
-여러개의 클라이언트와 소켓통신으로 수신한 센서값으로 사운드폰트를 출력하는 합주 시스템.
+4개의 클라이언트는 서로다른 센서를 가지고 주파수와 진폭값을 서버에 보낸다.
+
+서버는 로컬네트워크에서 bsd socket api로 수신한 값으로 사운드폰트를 출력한다.
+
+
 
 ---
 
@@ -8,7 +12,9 @@
 
 ![](https://img.youtube.com/vi/MmDjA5BigVI/0.jpg)
 
-[유튜브링크](https://youtu.be/MmDjA5BigVI?si=FCbgIehlzDGsObau)
+[유튜브 링크](https://youtu.be/MmDjA5BigVI?si=FCbgIehlzDGsObau)
+
+[전체 프로젝트 링크](https://git.ajou.ac.kr/luftaquila/trinity)
 
 ---
 
